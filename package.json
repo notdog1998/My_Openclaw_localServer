@@ -1,19 +1,27 @@
 {
   "name": "wecom-bot",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "企业微信机器人 - TypeScript 异步响应版",
+  "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "ts-node src/server.ts",
+    "start": "node dist/server.js",
+    "watch": "tsc --watch"
   },
-  "keywords": [],
+  "keywords": ["wecom", "bot", "openclaw"],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
     "axios": "^1.13.5",
-    "crypto-js": "^4.2.0",
     "dotenv": "^17.3.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "form-data": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.2",
+    "@types/node": "^22.13.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }

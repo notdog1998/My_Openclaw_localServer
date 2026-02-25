@@ -1,195 +1,114 @@
-# WeCom Bot - 企业微信自建应用机器人
+# WeCom Bot v2.0 - TypeScript 异步响应版
 
-基于企业微信官方 API 的 ChatBot，稳定可靠。
+## 新特性
 
-## 特性
+### 1. 异步响应模式
+- 收到消息后**立即**返回 `success`，避免企业微信超时
+- 后台异步处理消息，处理完成后**主动推送**回复
+- 支持长时间运行的 AI 对话，不再受 5 秒超时限制
 
-- ✅ 企业微信官方 API，不封号
-- ✅ 支持收发消息（私聊 + 群聊）
-- ✅ 支持消息加解密（安全）
-- ✅ 支持主动推送消息（HTTP API）
-- ✅ 命令扩展简单
+### 2. 多媒体消息支持
+- **图片消息**：自动识别图片内容并回复分析结果
+- **语音消息**：支持语音消息处理（可通过语音识别或提示）
+- **文本消息**：完整的文字对话支持
 
-## 前置准备
+### 3. TypeScript 重构
+- 完整类型安全，严格模式
+- 模块化架构，职责分离
+- 更好的代码可维护性
 
-### 1. 注册企业微信
+## 项目结构
 
-访问 https://work.weixin.qq.com/ 注册企业（个人可注册，无需认证）
-
-### 2. 创建自建应用
-
-1. 登录企业微信管理后台
-2. 进入「应用管理」→「自建」→「创建应用」
-3. 填写应用名称、上传 Logo
-4. 记住 **AgentId** 和 **Secret**
-5. 设置可见成员（哪些人能使用这个应用）
-
-### 3. 获取企业ID (CorpID)
-
-在「我的企业」页面最下方，找到 **企业ID**
-
-### 4. 配置接收消息（可选，如果需要被动回复）
-
-在应用详情页「接收消息」→「设置API」：
-1. **URL**: `http://你的服务器/wecom`
-2. **Token**: 随机生成（记住它）
-3. **EncodingAESKey**: 随机生成（记住它）
-
-> ⚠️ URL 必须是企业微信能访问的公网地址。本地测试需要内网穿透（ngrok、cpolar 等）
-
-### 5. 内网穿透（本地测试用）
-
-使用 ngrok：
-```bash
-ngrok http 3000
+```
+src/
+├── config/
+│   └── index.ts              # 配置管理
+├── types/
+│   └── index.ts              # TypeScript 类型定义
+├── services/
+│   ├── wecom-crypt.ts        # 企业微信消息加密/解密
+│   ├── wecom-api.ts          # 企业微信 API 调用
+│   ├── openclaw.ts           # OpenClaw AI 服务
+│   └── message-handler.ts    # 消息处理器（异步）
+├── utils/
+│   └── xml-parser.ts         # XML 解析工具
+└── server.ts                 # 主入口
 ```
 
-得到 `https://xxxxx.ngrok.io`，这就是你的回调地址。
+## 安装与运行
 
-## 安装
-
+### 安装依赖
 ```bash
-cd wecom-bot
 npm install
 ```
 
-## 配置
-
-### 方式1: 环境变量（推荐，生产环境）
-
+### 开发模式
 ```bash
-# Windows PowerShell
-$env:WECOM_CORP_ID="wwxxxxxxxxxxxxxxxx"
-$env:WECOM_AGENT_ID="1000002"
-$env:WECOM_SECRET="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-$env:WECOM_TOKEN="your_token"
-$env:WECOM_ENCODING_AES_KEY="your_aes_key"
-$env:PORT="3000"
-
-# Windows CMD
-set WECOM_CORP_ID=wwxxxxxxxxxxxxxxxx
-set WECOM_AGENT_ID=1000002
-...
+npm run dev
 ```
 
-### 方式2: 修改代码（快速测试）
-
-编辑 `bot.js`，修改 CONFIG 对象：
-```javascript
-const CONFIG = {
-  corpId: 'wwxxxxxxxxxxxxxxxx',
-  agentId: '1000002',
-  secret: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-  token: 'your_token',
-  encodingAesKey: 'your_aes_key',
-  port: 3000,
-};
-```
-
-## 运行
-
+### 编译并运行
 ```bash
-node bot.js
+npm run build
+npm start
 ```
 
-启动后：
-1. 企业微信管理后台设置 URL 验证
-2. 在手机上打开企业微信，进入应用
-3. 发送消息测试
-
-## API 接口
-
-### 主动发送消息
-
+### 监视模式
 ```bash
-POST http://localhost:3000/api/send
-Content-Type: application/json
-
-{
-  "userId": "ZhangSan",
-  "message": "你好，这是一条主动推送的消息"
-}
+npm run watch
 ```
 
-### 获取用户信息
+## 环境变量配置
 
-在代码中：
-```javascript
-const userInfo = await bot.api.getUserInfo('ZhangSan');
-console.log(userInfo);
+```env
+# 企业微信配置
+WECOM_CORP_ID=wwxxxxxxxxxxxxxxxx
+WECOM_AGENT_ID=1000002
+WECOM_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+WECOM_TOKEN=your_token
+WECOM_ENCODING_AES_KEY=your_aes_key
+
+# OpenClaw 配置
+OPENCLAW_URL=http://127.0.0.1:18789
+OPENCLAW_TOKEN=your_token
+OPENCLAW_AGENT_ID=main
+
+# 服务器端口
+PORT=3456
 ```
 
-## 自定义回复逻辑
+## API 端点
 
-编辑 `handleMessage` 方法：
-
-```javascript
-async handleMessage(msg) {
-  const { FromUserName, Content } = msg;
-  const text = Content.trim();
-  
-  if (text === '天气') {
-    // 调用天气API
-    return await getWeather();
-  }
-  
-  if (text.startsWith('提醒 ')) {
-    // 设置提醒
-    return '已设置提醒';
-  }
-  
-  return `收到: ${text}`;
-}
+### 健康检查
+```
+GET /
 ```
 
-## 部署到服务器
-
-1. 代码上传到服务器
-2. 安装依赖: `npm install --production`
-3. 设置环境变量
-4. 使用 PM2 启动:
-   ```bash
-   npm install -g pm2
-   pm2 start bot.js --name wecom-bot
-   pm2 save
-   pm2 startup
-   ```
-5. 配置 Nginx 反向代理（可选）
-6. 企业微信后台更新 URL 为服务器地址
-
-## 目录结构
-
+### 企业微信 Webhook
 ```
-wecom-bot/
-├── bot.js           # 主程序
-├── package.json
-├── .env.example     # 环境变量示例
-└── README.md
+GET /wecom    # URL 验证
+POST /wecom   # 接收消息
 ```
 
-## 常见问题
+### 手动发送消息
+```
+POST /api/send
+Body: { "userId": "user_id", "message": "消息内容" }
+```
 
-**Q: URL 验证失败？**
-A: 
-- 检查 Token 和 EncodingAESKey 是否正确
-- 确认 URL 能被企业微信服务器访问（公网可访问）
-- 查看控制台日志
+## 代码风格 Skill
 
-**Q: 收不到消息？**
-A:
-- 确认应用可见范围包含你的账号
-- 检查企业微信管理后台「接收消息」是否配置正确
-- 查看服务器日志
+项目包含 `.claude/skills/code-style.md`，定义了代码生成规范：
+- 只实现基本功能，避免冗余
+- TypeScript 严格模式
+- 模块化、高可读性、可维护性
 
-**Q: 提示 "not allow to access from your ip"？**
-A: 企业微信应用需要设置 IP 白名单，在「企业微信管理后台」→「我的企业」→「企业信息」→「IP白名单」添加服务器IP
+## 与原版的差异
 
-## 相关文档
-
-- [企业微信开发者文档](https://developer.work.weixin.qq.com/document/path/90487)
-- [接收消息 API](https://developer.work.weixin.qq.com/document/path/90239)
-- [发送消息 API](https://developer.work.weixin.qq.com/document/path/90236)
-
-## License
-
-MIT
+| 特性 | v1.0 (JS) | v2.0 (TS) |
+|------|-----------|-----------|
+| 响应模式 | 同步（5秒超时） | 异步（无限制） |
+| 消息类型 | 仅文本 | 文本/图片/语音 |
+| 类型安全 | 无 | TypeScript |
+| 代码组织 | 单一文件 | 模块化 |
+| 主动回复 | 不支持 | 支持 |
