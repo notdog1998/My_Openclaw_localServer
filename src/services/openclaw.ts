@@ -7,7 +7,7 @@ export class OpenClawService {
   constructor(private readonly config: OpenClawConfig) {
     this.httpClient = axios.create({
       baseURL: config.baseUrl,
-      timeout: 120000,
+      timeout: 600000,
       headers: {
         'Content-Type': 'application/json',
         'x-openclaw-agent-id': config.agentId,
